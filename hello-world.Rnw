@@ -1,0 +1,13 @@
+\documentclass{article}
+
+\begin{document}
+
+Hello World \Sexpr{6*6}
+
+<<hello, echo=F>>=
+print("Hello again")
+d<-15
+5*d
+@
+
+\end{document}
