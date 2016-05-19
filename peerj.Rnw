@@ -194,7 +194,40 @@ The non-working respondents that were excluded from answering Joel's test were a
 \emph{M} = \Sexpr{round(describe(d$Q2[!d$professionals],skew=F,range=T,check=T,trim=.1)$mean,1)} years, 
 \emph{SD} = \Sexpr{round(describe(d$Q2[!d$professionals],skew=F,range=T,check=T,trim=.1)$sd,1)} years) that the analyzed repondents. 
 
+<<Table1, echo=FALSE>>=
+###############################################################################
+# DESCRIPTIVES
+###############################################################################
 
+# # Q3 - Gender
+# sum(!is.na(d$Q3[d$professionals]))
+# # females
+# sum(!is.na(d$Q3[d$professionals & d$Q3==2])) / sum(!is.na(d$Q3[d$professionals]))
+
+desc.vars <- c("Q2", "Q4.1", "Q4.2", "Q4.3", "Q5.1", "Q6", "actualProgHours", "experience")
+desc.names <- c("Age", "Paid programming hrs", "Programming education hrs", "Unpaid (e.g., open source) hrs", "Fraction actual paid programming percent", "General programming skill 1-5", "Actual paid programming hrs week", "Programming experience yrs")
+
+d.desc <- d[desc.vars]
+d.desc$experience <- d.desc$experience/12
+names(d.desc) <- desc.names
+
+cols <- c(1,6:10)
+# tab1 <- describe(d.desc[complete.cases(d$JoelSum),],skew=F,range=T,check=T,trim=.1) #Age all
+tab1 <- describe(d.desc[d$professionals,],skew=F,range=T,check=T,trim=.1)
+tab1 <- tab1[-cols]
+print("TABLE1: Descriptives for those who completed the Joel test");tab1
+kable(tab1, format="latex", digits=c(0,2,2,2,2), caption="Table 1")
+# % install.packages("stargazer")
+# % library(stargazer)
+# % stargazer(tab1, title="Stargazer", type="html")
+@
+
+Here is the x table
+<<tab1xtable, results="asis", echo=FALSE>>=
+library(xtable)
+colnames(tab1) <- c("n", "mean", "SD", "median", "SE")
+xtable(tab1[-1,], digits=c(0,0,1,1,0,2), caption="Table 1 using xtable")
+@
 
 \begin{figure}[ht]
 \centering
