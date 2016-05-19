@@ -10,7 +10,7 @@
 \documentclass[fleqn,10pt,lineno]{wlpeerj} % for journal submissions
 % \documentclass[fleqn,10pt]{wlpeerj} % for preprint submissions
 
-\title{Article Title}
+\title{Quality of software teams: A global online survey of industrial best practices}
 
 \author[1]{Gunnar Rye Bergersen}
 \author[1]{Viktoria Stray}
@@ -19,7 +19,11 @@
 \keywords{Keyword1, Keyword2, Keyword3}
 
 \begin{abstract}
-Dummy abstract text. {\tt Dummy} abstract text. Dummy abstract text. Dummy abstract text. Dummy abstract text. Dummy abstract text. Dummy abstract text. Dummy abstract text. Dummy abstract text. Dummy abstract text. Dummy abstract text.
+\emph{Context}: The Joel test describes a set of practices that are claimed to indicate the quality of a software team. These are practices such as source control, build in one step, daily builds and hallway usability testing. 
+\emph{Goal}: To investigate which practices are applied among IT professionals and to analyse whether the Joel test is a good tool to indicate team quality. 
+\emph{Method}: We conducted a survey at a english-speaking programming forum; after removing non-working programmers, we obtained 1542 responses. Nevne hvilke analyser som er gjort.  
+\emph{Results}: Significant and positive relations were found between all the investigated variables a Joel test result. Higher Joel test results were also associated with respondents working at major IT production hubs, but some differences were present.  
+\emph{Conclusion}: Overall, our early findings suggest that the Joel test can be used by organizations to quickly gauge the quality software teams; possible improvements are suggested.  
 \end{abstract}
 
 \begin{document}
@@ -30,13 +34,13 @@ Dummy abstract text. {\tt Dummy} abstract text. Dummy abstract text. Dummy abstr
 
 \section*{Introduction}
 
-Your introduction goes here! Some examples of commonly used commands and features are listed below, to help you get started. \Sexpr{14*14}
+Your introduction goes here! Some examples of commonly used commands and features are listed below, to help you get started. Lets multiply 14 times 14. And the answer given by R is {\tt \Sexpr{14*14}}
 
 If you have a question, please use the help menu in the top right of the screen to get in touch. When your article or pre-print is complete, use the "Submit to PeerJ" button in the topbar to send your files to PeerJ.
 
-\subsection*{About PeerJ}
+% \subsection*{About PeerJ}
 
-PeerJ is an award-winning open access publisher covering the biological and medical sciences.  PeerJ provides authors with three publication venues: \textit{PeerJ} and \textit{PeerJ Computer Science} (peer-reviewed academic journals) and \textit{PeerJ PrePrints} (a 'pre-print server'). See https://peerj.com/about/publications/ for more information.
+% PeerJ is an award-winning open access publisher covering the biological and medical sciences.  PeerJ provides authors with three publication venues: \textit{PeerJ} and \textit{PeerJ Computer Science} (peer-reviewed academic journals) and \textit{PeerJ PrePrints} (a 'pre-print server'). See https://peerj.com/about/publications/ for more information.
 
 The PeerJ model allows an author to publish articles in their peer-reviewed journal via the purchase of a lifetime Publication Plan. Prices start from just \$99 (a one-off payment) which entitles an author to the lifetime ability to publish 1 article per year for free. Publication in PeerJ PrePrints is entirely free.
 
@@ -49,6 +53,149 @@ Use section and subsection commands to organize your document. \LaTeX{} handles 
 
 Use the table and tabular commands for basic tables --- see Table~\ref{tab:widgets}, for example. You can upload a figure (JPEG, PNG or PDF) using the project menu. To include it in your document, use the includegraphics command as in the code for Figure~\ref{fig:view} below.
 
+<<Figure1, echo=FALSE>>=
+#install.packages("qgraph", dep = TRUE)
+#library("qgraph")
+#library("polycor")
+install.packages("RUnit", dep = TRUE)
+library("RUnit")
+install.packages("psych", dep = TRUE)
+library("psych")
+
+# read the file
+d.raw <- read.csv("data-analysis.csv", 
+                     header = TRUE, 
+                     sep = ";", 
+                     quote = "\"",
+                     dec = ",", 
+                     # skip = 1, # toggle to use second line as variable input
+                     fill = TRUE, 
+                     comment.char = "")
+# cat(paste(shQuote(names(data.raw), # convenience function for printing all the variables 
+#                   type="cmd"), collapse=", ")) 
+kUseVars <- c(#"X", "X.1", "Q0", 
+  "Q1.X", "Q1.Y", "Q2", "Q3", "Q4.1", "Q4.2", "Q4.3", "Q5.1", "Q6", "Q7.1", "Q7.2", "Q8.0", "Q8.1", "Q8.2", "Q8.3", "Q8.4", "Q8.5", "Q9.1", "Q9.2", "Q9.3", "Q9.4", "Q9.5", "Q9.6", "Q9.7", "Q9.8", "Q9.9", "Q9.10", "Q9.11", "Q9.12", "Q11")
+kJoelItemNames <- c("SourceCtrl", "Build1Step", "DailyBuilds",  "BugDB", "FixBugsB4Code", "Schedule", "Spec", "QuietWork", "BestTools", "Testers","CodeInterview", "UsabilityTest")
+kJoelItems <- c("Q9.1", "Q9.2", "Q9.3", "Q9.4", "Q9.5", "Q9.6", "Q9.7", "Q9.8", "Q9.9", "Q9.10", "Q9.11", "Q9.12")
+
+# import and clean data
+d <- d.raw[kUseVars] # use a subset of variables
+d[kJoelItems] <- d[kJoelItems] - 1 #Decrease the Joel test values by 1, e.g., 0 = no and 1 = yes
+
+###############################################################################
+# MAKE NEW VARIABLES
+###############################################################################
+
+d$professionals <- d$Q4.1 > 0 # 
+
+# gender is not used
+d$Q3.gender <- factor(d$Q3, labels = c("M", "F"))
+d$Q3.gender <- if(d$Q3==1) {"M"} else {if(d$Q3!=1) "F"}
+d$JoelSum <- rowSums(d[kJoelItems]) # calculate sum of Joel variables
+
+# calculate months of experience
+# exp <- c(10:11, 31) # TODO what is this?
+d$Q7.1 <- as.integer(d$Q7.1) # enforce to numeric
+d$Q7.2 <- as.integer(d$Q7.2) # change months to numeric TODO(gunnar): why is this numeric to begin with?
+d$experience <- ((d$Q7.1 * 12) + d$Q7.2)
+for (i in 1:nrow(d)) { # if years is valid but month is NA use years
+  if(is.integer(d[i, ]$Q7.1) && is.na(d[i, ]$Q7.2)) {
+    d[i, ]$experience <- d[i, ]$Q7.1 * 12
+  }  
+}
+for (i in 1:nrow(d)) { # if months is valid but years is NA, use months
+  if(is.na(d[i, ]$Q7.1) && is.integer(d[i, ]$Q7.2)) {
+    d[i, ]$experience <- d[i, ]$Q7.2
+  }  
+}
+
+# make logartimtic versions of experience
+d$Q7ln <- log(d$experience + 0.001)
+d$Q7 <- d$experience
+d$Q4.1ln <- log(d$Q4.1 + 1)
+
+# drop developers with unreasonably high experience
+d <- d[d$experience < 720, ] # drops observations
+checkEquals(dim(d)[[1]], 2500) # RUnit test
+
+# calculate the actual hours spent coding per week
+d$actualProgHours <- d$Q4.1 * (d$Q5.1/100)
+
+# endcode US/West
+d$USWest   <- ((d$Q1.X >= 128) & (d$Q1.X < 164) & (d$Q1.Y >= 197) & (d$Q1.Y < 259))
+d$USEast   <- ((d$Q1.X >= 260) & (d$Q1.X < 290) & (d$Q1.Y >= 210) & (d$Q1.Y < 250))
+d$London   <- ((d$Q1.X >= 480) & (d$Q1.X < 500) & (d$Q1.Y >= 170) & (d$Q1.Y < 190))
+d$WorldRest <- (!d$USWest & !d$USEast & !d$London)
+
+# encode intelligence, obsessed, and inept
+d$Q11.intelligent <- (d$Q11==2 | d$Q11==6 | d$Q11==7 | d$Q11==4)
+d$Q11.inept <-       (d$Q11==1 | d$Q11==4 | d$Q11==7 | d$Q11==5)
+d$Q11.obsessed <-    (d$Q11==3 | d$Q11==6 | d$Q11==7 | d$Q11==5)
+
+# Encode Q8 "software developement is talent versus fame"
+kCareerItems <- c("Q8.0","Q8.1","Q8.2","Q8.3","Q8.4","Q8.5")
+kCareerItemNames <- c("Scientist","Author","Musician","Athlete","Actor","Made sextape")
+d[kCareerItems] <- d[kCareerItems] - 1
+d$Q8 <- (d$Q8.0*6 + d$Q8.1*5 + d$Q8.2*4 + d$Q8.3*3 + d$Q8.4*2 + d$Q8.5*1) / 
+  (d$Q8.0 + d$Q8.1 + d$Q8.2 + d$Q8.3 + d$Q8.4 + d$Q8.5)
+d$Q8[is.nan(d$Q8)] <- NA # previous line results in some NaN, remove these
+
+###############################################################################
+# PLOT THE WORLD
+###############################################################################
+
+library("ggplot2")
+library("grid")
+library("jpeg")
+
+img <- readJPEG("theWorld5.jpg") # 1029 vs 609
+
+# add some dummy points
+d.plot <- d[,c("Q1.X", "Q1.Y")]
+d.plot <- d.plot[!is.na(d.plot$Q1.X),]
+d.plot <- d.plot[!is.na(d.plot$Q1.Y),]
+d.plot = rbind(d.plot, c(0,0))
+d.plot = rbind(d.plot, c(0,609))
+d.plot = rbind(d.plot, c(1029,0))
+d.plot = rbind(d.plot, c(1029,609))
+dim(d.plot)
+
+ggplot(d.plot, aes(Q1.X,-Q1.Y)) + 
+  annotation_custom(rasterGrob(img, width=unit(1.0,"npc"), height=unit(1.0,"npc")), -Inf, Inf, -Inf, Inf) +
+  stat_bin2d(bins=60, aes(fill=cut(..count.., c(1,5,20,50,100,Inf)))) +
+  scale_fill_hue(h= c(275,020), l =75, c=60, na.value=rgb(0, 0, 0, alpha=0)) + 
+  geom_point(color="black", alpha = 0.11) + 
+  scale_x_continuous(expand=c(0,0)) +
+  scale_y_continuous(expand=c(0,0)) +
+  guides(fill=guide_legend(title=NULL)) +
+  theme(legend.justification=c(.95,.75), legend.position=c(.95,.75)) + 
+#  scale_x_continuous(limit=c(0,1021)) +
+#  scale_y_continuous(c(-629,0)) 
+   geom_rect(xmin = 128, xmax = 163, ymin = -258, ymax = -197, color="black", fill=NA) + 
+   geom_rect(xmin = 260, xmax = 289, ymin = -249, ymax = -210, color="black", fill=NA) +
+   geom_rect(xmin = 480, xmax = 499, ymin = -189, ymax = -170, color="black", fill=NA)
+@
+
+
+\section*{Method}
+
+To obtain responses from professionals, the users of a large, english-speaking programming related forum was asked to participate in a survey posted on Reddit. At the time, there were 345000 subscribers to the programming-related forum. Participation was thus voluntary and no compensation was offered except that the results would be posted at a later time. The survey open for four days. The majority of responses (85\%) came during the first 48 hours. 	
+
+\subsection*{Respondents}
+
+A total of \Sexpr{dim(d)[1]+2} individuals clicked on the link to the survey. 
+The mean age of the respondents was \Sexpr{round(mean(d$Q2[d$professionals], na.rm=T),1)} years 
+(\emph{n} = \Sexpr{sum(!is.na(d$Q2[d$professionals]))}, 
+\emph{SD} = \Sexpr{round(sd(d$Q2[d$professionals], na.rm=T),1)} years, 
+median = \Sexpr{(median(d$Q2[d$professionals], na.rm=T))} years). 
+Only \Sexpr{(summary(d$Q3[d$professionals])[[4]]-1)*100}\% were female. 
+The non-working respondents that were excluded from answering Joel's test were about one standard deviation younger 
+(\emph{n} = \Sexpr{describe(d$Q2[!d$professionals],skew=F,range=T,check=T,trim=.1)[[2]]}, 
+\emph{M} = \Sexpr{round(describe(d$Q2[!d$professionals],skew=F,range=T,check=T,trim=.1)$mean,1)} years, 
+\emph{SD} = \Sexpr{round(describe(d$Q2[!d$professionals],skew=F,range=T,check=T,trim=.1)$sd,1)} years) that the analyzed repondents. 
+
+
+
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{view.pdf}
@@ -58,7 +205,7 @@ Use the table and tabular commands for basic tables --- see Table~\ref{tab:widge
 
 \begin{table}[ht]
 \centering
-\begin{tabular}{l|r}
+\begin{tabular}{l|c}
 Item & Quantity \\\hline
 Widgets & 42 \\
 Gadgets & 13
@@ -98,10 +245,6 @@ You can make lists with automatic numbering \dots
 \end{description}
 
 We hope you find write\LaTeX\ useful for your PeerJ submission, and please let us know if you have any feedback. Further examples with dummy text are included in the following pages.
-
-\section*{Methods}
-
-\lipsum[4] % Dummy text
 
 \begin{equation}
 \cos^3 \theta =\frac{1}{4}\cos\theta+\frac{3}{4}\cos 3\theta
