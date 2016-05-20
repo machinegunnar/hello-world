@@ -226,7 +226,7 @@ kable(tab1, format="latex", digits=c(0,2,2,2,2))
 <<tab1xtable, results="asis", echo=FALSE>>=
 library(xtable)
 colnames(tab1) <- c("n", "mean", "SD", "median", "SE")
-print(xtable(caption="Descriptives using xtable", tab1[-1,], digits=c(0,0,1,1,0,2), align=c("l", "|","r","r","r","r","r")), caption.placement = "top")
+print(xtable(caption="Descriptives using xtable", tab1[-c(1),], digits=c(0,0,1,1,0,2), align=c("l", "|","r","r","r","r","r")), caption.placement = "top")
 @
 
 \begin{figure}[ht]
