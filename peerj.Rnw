@@ -10,7 +10,7 @@
 \documentclass[fleqn,10pt,lineno]{wlpeerj} % for journal submissions
 % \documentclass[fleqn,10pt]{wlpeerj} % for preprint submissions
 
-\title{Quality of software teams: A global online survey of industrial best practices}
+\title{The quality of software teams: A global online survey of industrial best practices}
 
 \author[1]{Gunnar Rye Bergersen}
 \author[1]{Viktoria Stray}
@@ -53,7 +53,7 @@ Use section and subsection commands to organize your document. \LaTeX{} handles 
 
 Use the table and tabular commands for basic tables --- see Table~\ref{tab:widgets}, for example. You can upload a figure (JPEG, PNG or PDF) using the project menu. To include it in your document, use the includegraphics command as in the code for Figure~\ref{fig:view} below.
 
-<<Figure1, echo=FALSE>>=
+<<Load_and_modify, echo=FALSE>>=
 #install.packages("qgraph", dep = TRUE)
 #library("qgraph")
 #library("polycor")
@@ -139,7 +139,9 @@ d[kCareerItems] <- d[kCareerItems] - 1
 d$Q8 <- (d$Q8.0*6 + d$Q8.1*5 + d$Q8.2*4 + d$Q8.3*3 + d$Q8.4*2 + d$Q8.5*1) / 
   (d$Q8.0 + d$Q8.1 + d$Q8.2 + d$Q8.3 + d$Q8.4 + d$Q8.5)
 d$Q8[is.nan(d$Q8)] <- NA # previous line results in some NaN, remove these
+@
 
+<<Figure1, echo=FALSE, out.width = '0.98\\textwidth', out.height = "0.43\\textheight">>=
 ###############################################################################
 # PLOT THE WORLD
 ###############################################################################
@@ -169,6 +171,7 @@ ggplot(d.plot, aes(Q1.X,-Q1.Y)) +
   scale_y_continuous(expand=c(0,0)) +
   guides(fill=guide_legend(title=NULL)) +
   theme(legend.justification=c(.95,.75), legend.position=c(.95,.75)) + 
+  theme(plot.margin=unit(c(0,0,0,0),"mm")) + #remove whitespace
 #  scale_x_continuous(limit=c(0,1021)) +
 #  scale_y_continuous(c(-629,0)) 
    geom_rect(xmin = 128, xmax = 163, ymin = -258, ymax = -197, color="black", fill=NA) + 
@@ -194,7 +197,8 @@ The non-working respondents that were excluded from answering Joel's test were a
 \emph{M} = \Sexpr{round(describe(d$Q2[!d$professionals],skew=F,range=T,check=T,trim=.1)$mean,1)} years, 
 \emph{SD} = \Sexpr{round(describe(d$Q2[!d$professionals],skew=F,range=T,check=T,trim=.1)$sd,1)} years) that the analyzed repondents. 
 
-<<Table1, echo=FALSE>>=
+\noindent{\tt Descriptives right out of R:}
+<<Table1R, echo=FALSE>>=
 ###############################################################################
 # DESCRIPTIVES
 ###############################################################################
@@ -215,19 +219,20 @@ cols <- c(1,6:10)
 # tab1 <- describe(d.desc[complete.cases(d$JoelSum),],skew=F,range=T,check=T,trim=.1) #Age all
 tab1 <- describe(d.desc[d$professionals,],skew=F,range=T,check=T,trim=.1)
 tab1 <- tab1[-cols]
-print("TABLE1: Descriptives for those who completed the Joel test");tab1
-kable(tab1, format="latex", digits=c(0,2,2,2,2))
-# % install.packages("stargazer")
-# % library(stargazer)
-# % stargazer(tab1, title="Stargazer", type="html")
 @
 
+<<Table1kable, echo=FALSE>>=
+print("TABLE1: Descriptives for those who completed the Joel test");tab1
+kable(tab1, format="latex", digits=c(0,2,2,2,2))
+@
 
 <<tab1xtable, results="asis", echo=FALSE>>=
 library(xtable)
 colnames(tab1) <- c("n", "mean", "SD", "median", "SE")
 print(xtable(caption="Descriptives using xtable", tab1[-c(1),], digits=c(0,0,1,1,0,2), align=c("l", "|","r","r","r","r","r")), caption.placement = "top")
 @
+
+
 
 \begin{figure}[ht]
 \centering
@@ -250,7 +255,272 @@ Gadgets & 13
 
 LaTeX formats citations and references automatically using the bibliography records in your .bib file, which you can edit via the project menu. Use the cite command for an inline citation, like \cite{Figueredo:2009dg}, and the citep command for a citation in parentheses \citep{Figueredo:2009dg}.
 
+
+<<Table2, echo=FALSE>>=
+###############################################################################
+# TABLE 2: DESCRIPTIVES OF THE JOEL TEST using data frame
+###############################################################################
+library(gtools) # for making significance stars
+
+getFishersP <- function(x1,x2,y1,y2) {
+  tmp.matrix <- matrix(c(x1,x2,y1,y2), nrow=2)
+  p <- fisher.test(tmp.matrix)$p.value
+  return (p)
+}
+
+getFishersOR <- function(x1,x2,y1,y2) {
+  tmp.matrix <- matrix(c(x1,x2,y1,y2), nrow=2)
+  or <- fisher.test(tmp.matrix)$estimate
+  return (or)
+}
+
+calculateFishersP <- function(q, d.h1, d.h0) { # q=question name
+  x1 <- summary(d.h1[[q]])[[2]]
+  x2 <- summary(d.h0[[q]])[[2]]
+  y1 <- summary(d.h1[[q]])[[1]]
+  y2 <- summary(d.h0[[q]])[[1]] 
+  p <- getFishersP(x1,x2,y1,y2)
+  return(p)
+}
+
+calculateFishersOR <- function(q, d.h1, d.h0) { # q=question name
+  x1 <- summary(d.h1[[q]])[[2]]
+  x2 <- summary(d.h0[[q]])[[2]]
+  y1 <- summary(d.h1[[q]])[[1]]
+  y2 <- summary(d.h0[[q]])[[1]] 
+  or <- getFishersOR(x1,x2,y1,y2)
+  return(or)
+}
+
+# Make variables
+tab2 <- data.frame(name=kJoelItemNames)
+nlist = list()
+
+# work on a subset consisting of only professonals i.e, experience > 1
+d.prof <- d[!is.na(d$professionals) & d$professionals==T,] # make n = 1542
+
+# remove those who cannot be used due to missing location?
+# rownames(d.prof[is.na(d.prof$Q1.X),])
+# dim(d.prof[,])
+# dim(d.prof[-c(528,1194,1473,1594,1659), ])
+# d.prof <- d.prof[-c(528,1194,1473,1594,1659), ]
+
+# ------ Make USWest
+d.temp.h1 <- d.prof[d.prof$USWest,] # work on a subset for the USWest calculation
+tab2 <- transform(tab2, nUSWest = describe(d.temp.h1[kJoelItems])$n) # get the n's
+tab2 <- transform(tab2, USWest = 100*describe(d.temp.h1[kJoelItems])$mean) # get means
+tab2 <- transform(tab2, USWest = round(tab2$USWest,1)) # round off to two decimals
+
+# Make stars
+d.temp.h1 <- lapply(d.temp.h1[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
+d.temp.h0 <- d.prof[d.prof$WorldRest,]
+d.temp.h0 <- lapply(d.temp.h0[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
+for (i in 1:12) {
+  tab2$sig[[i]] <- stars.pval(calculateFishersP(i, d.temp.h1, d.temp.h0))
+  tab2$USWestOR[[i]] <- round(calculateFishersOR(i, d.temp.h1, d.temp.h0),1)
+}
+
+# Print
+tab2$sig <- gsub("\\s","",tab2$sig) # remove whitespace
+tab2$sig <- gsub("\\.","+",tab2$sig) # change . (p<0.10) to +
+tab2$USWest <- paste(format(tab2$USWest,digits=2,nsmall=1), tab2$sig, sep="")
+tab2$sig <- NULL
+# -------- END Make USWest
+
+# ------ Make USEast
+d.temp.h1 <- d.prof[d.prof$USEast,] # work on a subset for the USEast calculation
+tab2 <- transform(tab2, nUSEast = describe(d.temp.h1[kJoelItems])$n) # get the n's
+tab2 <- transform(tab2, USEast = 100*describe(d.temp.h1[kJoelItems])$mean) # get means
+tab2 <- transform(tab2, USEast = round(tab2$USEast,1)) # round off to two decimals
+
+# Make stars
+d.temp.h1 <- lapply(d.temp.h1[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
+d.temp.h0 <- d.prof[d.prof$WorldRest,]
+d.temp.h0 <- lapply(d.temp.h0[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
+for (i in 1:12) {
+  tab2$sig[[i]] <- stars.pval(calculateFishersP(i, d.temp.h1, d.temp.h0))
+  tab2$USEastOR[[i]] <- round(calculateFishersOR(i, d.temp.h1, d.temp.h0),1)
+}
+
+# Print
+tab2$sig <- gsub("\\s","",tab2$sig) # remove whitespace
+tab2$sig <- gsub("\\.","+",tab2$sig) # change . (p<0.10) to +
+tab2$USEast <- paste(format(tab2$USEast,digits=2,nsmall=1), tab2$sig, sep="")
+tab2$sig <- NULL
+# -------- END Make USEast
+
+# ------ Make London
+d.temp.h1 <- d.prof[d.prof$London,] # work on a subset for the London calculation
+tab2 <- transform(tab2, nLondon = describe(d.temp.h1[kJoelItems])$n) # get the n's
+tab2 <- transform(tab2, London = 100*describe(d.temp.h1[kJoelItems])$mean) # get means
+tab2 <- transform(tab2, London = round(tab2$London,1)) # round off to two decimals
+
+# Make stars
+d.temp.h1 <- lapply(d.temp.h1[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
+d.temp.h0 <- d.prof[d.prof$WorldRest,]
+d.temp.h0 <- lapply(d.temp.h0[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
+for (i in 1:12) {
+  tab2$sig[[i]] <- stars.pval(calculateFishersP(i, d.temp.h1, d.temp.h0))
+  tab2$LondonOR[[i]] <- round(calculateFishersOR(i, d.temp.h1, d.temp.h0),1)
+}
+
+# Print
+tab2$sig <- gsub("\\s","",tab2$sig) # remove whitespace
+tab2$sig <- gsub("\\.","+",tab2$sig) # change . (p<0.10) to +
+tab2$London <- paste(format(tab2$London,digits=2,nsmall=1), tab2$sig, sep="")
+tab2$sig <- NULL
+# -------- END Make London
+
+# ------ Make WorldRest
+d.temp.h1 <- d.prof[d.prof$WorldRest,] # work on a subset for the WorldRest calculation
+tab2 <- transform(tab2, nWorldRest = describe(d.temp.h1[kJoelItems])$n) # get the n's
+tab2 <- transform(tab2, WorldRest = 100*describe(d.temp.h1[kJoelItems])$mean) # get means
+tab2 <- transform(tab2, WorldRest = round(tab2$WorldRest,1)) # round off to two decimals
+
+# Make stars
+d.temp.h1 <- lapply(d.temp.h1[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
+d.temp.h0 <- d.prof[!d.prof$WorldRest,]
+d.temp.h0 <- lapply(d.temp.h0[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
+for (i in 1:12) {
+  tab2$sig[[i]] <- stars.pval(calculateFishersP(i, d.temp.h1, d.temp.h0))
+  tab2$WorldRestOR[[i]] <- round(calculateFishersOR(i, d.temp.h1, d.temp.h0),1)
+}
+
+# Print
+tab2$sig <- gsub("\\s","",tab2$sig) # remove whitespace
+tab2$sig <- gsub("\\.","+",tab2$sig) # change . (p<0.10) to +
+tab2$WorldRest <- paste(format(tab2$WorldRest,digits=2,nsmall=1), tab2$sig, sep="")
+tab2$sig <- NULL
+# -------- END Make WorldRest
+@
+
+<<Table2print, results="asis", echo=FALSE>>=
+print(xtable(caption="Descriptives using xtable", tab2[,-c(6:14)], digits=c(0,0,0,0,0,0), align=c("l", "l", "r","r","r","r")), caption.placement = "top")
+@
+
+<<Table2decimalprint, results="asis", echo=FALSE>>=
+require(xtable) 
+#' Prints a LaTeX table with numeric columns aligned on their decimal points.
+#' 
+#' This function wraps the \code{\link{xtable}} and \code{\link{print.xtable}}
+#' functions in the \code{xtable} package so that numeric columns are aligned
+#' on their decimal place.
+#' 
+#' See \url{http://jason.bryer.org/posts/2013-01-04/xtable_with_aligned_decimals.html}
+#' for more information.
+#' 
+#' @author Jason Bryer <jason@@bryer.org>
+#' @param x a data frame to create a LaTeX table from.
+#' @param cols a numeric vector indicating which columns should be aligned on
+#'        decimal points. It defaults to all columns of type numeric.
+#' @param colAlignment named character vector where each element name corresponds to a
+#         column name and the value is the LaTeX alignment (i.e. l, r, or c).
+#' @param tocharFun the function used to convert the numeric vecotr to a character
+#'        vector. This defaults to \code{\link{prettyNum}}, but other possible
+#'        options are \code{\link{as.character}}, \code{\link{format}}, 
+#'        \code{\link{formatC}}, or some other custom function.
+#' @param ... other parameters passed to \code{tocharFun}, \code{\link{xtable}},
+#'        and \code{\link{print.xtable}}.
+#' @seealso xtable
+#' @export
+xtable.decimal <- function(x, 
+			cols=which(lapply(x, class) == 'numeric'), 
+			colAlignment, 
+			tocharFun=prettyNum,
+			...) {
+	splitCol <- function(x, ...) {
+		s <- strsplit(tocharFun(x, ...), split='.', fixed=TRUE)
+		right <- sapply(s, FUN=function(x) { ifelse(length(x) == 2, x[2], '0') })
+		left <- sapply(s, FUN=function(x) { x[1] })
+		data.frame(left=left, right=right, stringsAsFactors=FALSE)
+	}
+
+	cols <- cols[order(cols, decreasing=TRUE)]
+	colnames <- names(x)
+	for(i in cols) {
+		if(i == 1) {
+			tmp <- cbind(splitCol(x[,1], ...), x[,2:ncol(x)])
+			names(tmp)[1:2] <- paste(names(tmp)[1], c('left','right'), sep='.')
+			names(tmp)[3:ncol(x)] <- names(x)[2:ncol(x)]
+			x <- tmp
+		} else if(i == ncol(x)) {
+			tmp <- cbind(x[,1:(ncol(x)-1)], splitCol(x[,ncol(x)], ...))
+			names(tmp)[1:(ncol(tmp)-2)] <- names(x)[1:(ncol(x)-1)]
+			names(tmp)[(ncol(tmp)-1):ncol(tmp)] <- paste(names(x)[ncol(x)], 
+						c('left','right'), sep='.')
+			x <- tmp
+		} else {
+			tmp <- cbind(x[,1:(i-1)], splitCol(x[,i], ...), x[,(i+1):ncol(x)])
+			names(tmp)[1:(i-1)] <- names(x)[1:(i-1)]
+			names(tmp)[i:(i+1)] <- paste(names(x)[i], c('left','right'), sep='.')
+			names(tmp)[(i+2):ncol(tmp)] <- names(x)[(i+1):ncol(x)]
+			x <- tmp
+		}
+	}
+
+	colnames[cols] <- paste('\\multicolumn{2}{c}{', colnames[cols], '}', sep='')
+	colnames <- paste(colnames, collapse=' & ')
+
+	addtorow <- list()
+	addtorow$pos <- list()
+	addtorow$pos[[1]] <- c(0)
+	addtorow$command <- paste( colnames, ' \\\\ ', sep='')
+
+	align <- rep('l', ncol(x))
+	if(!missing(colAlignment)) {
+		for(i in seq_along(colAlignment)) {
+			align[names(x) == names(colAlignment)[i]] <- colAlignment[i]
+		}
+	}
+	align[grep('.left$', names(x), perl=TRUE)] <- 'r@{.}'
+	align <- c('l', align) #Add an alignment for row names
+
+	xtab <- xtable(x, align=align, ...)
+	print(xtab, add.to.row=addtorow, include.rownames=FALSE, include.colnames=FALSE, ...)
+}
+
+tab2.temp <- tab2[,-c(2,5,8,11)]
+# colnames(tab2.temp) <- c("", "%", "OR", "%", "OR", "%", "OR", "%", "OR")
+
+xtable.decimal(tab2.temp)
+@
+
 \subsection*{Mathematics}
+
+Now testing multicolumn in xtable
+
+<<Table2multicolumnxtable, results="asis", echo=FALSE>>=
+require(xtable)
+age <- sample(c('30-50', '50-70', '70+'), 200, replace=T)
+sex <- sample(c('Male', 'Female'), 200, replace=T)
+val <- table(age, sex)
+val <- rbind(val, formatC(prop.table(val)*100, format='f', digits=1))
+val <- structure(val, dim=c(3, 4))
+val <- rbind(c('n', '%'), val)
+rownames(val) <- c('', sort(unique(age)))
+val <- xtable(val)
+
+addtorow <- list()
+addtorow$pos <- list(0)
+addtorow$command <- paste0(paste0('& \\multicolumn{2}{c}{', sort(unique(sex)), '}', collapse=''), '\\\\')
+
+print(val, add.to.row=addtorow, include.colnames=F)
+@
+
+% latex table generated in R 3.3.0 by xtable 1.8-2 package
+% Fri May 20 13:52:41 2016
+\begin{table}[ht]
+\centering
+\begin{tabular}{rllll}
+  \hline
+  & \multicolumn{2}{c}{Female}& \multicolumn{2}{c}{Male}\\
+ & n & \% & n & \% \\ \hline
+  30--50 & 29 & 14.5 & 46 & 23.0 \\ 
+  50--70 & 33 & 16.5 & 29 & 14.5 \\ 
+  70+ & 35 & 17.5 & 28 & 14.0 \\ 
+   \hline
+\end{tabular}
+\end{table}
 
 \LaTeX{} is great at typesetting mathematics. Let $X_1, X_2, \ldots, X_n$ be a sequence of independent and identically distributed random variables with $\text{E}[X_i] = \mu$ and $\text{Var}[X_i] = \sigma^2 < \infty$, and let
 $$S_n = \frac{X_1 + X_2 + \cdots + X_n}{n}
