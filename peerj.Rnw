@@ -293,6 +293,7 @@ calculateFishersOR <- function(q, d.h1, d.h0) { # q=question name
 }
 
 # Make variables
+kORdigits <- 2
 tab2 <- data.frame(name=kJoelItemNames)
 nlist = list()
 
@@ -309,22 +310,23 @@ d.prof <- d[!is.na(d$professionals) & d$professionals==T,] # make n = 1542
 d.temp.h1 <- d.prof[d.prof$USWest,] # work on a subset for the USWest calculation
 tab2 <- transform(tab2, nUSWest = describe(d.temp.h1[kJoelItems])$n) # get the n's
 tab2 <- transform(tab2, USWest = 100*describe(d.temp.h1[kJoelItems])$mean) # get means
-tab2 <- transform(tab2, USWest = round(tab2$USWest,1)) # round off to two decimals
+tab2 <- transform(tab2, USWest = round(tab2$USWest,1)) # round off decimals
 
 # Make stars
 d.temp.h1 <- lapply(d.temp.h1[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
 d.temp.h0 <- d.prof[d.prof$WorldRest,]
 d.temp.h0 <- lapply(d.temp.h0[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
 for (i in 1:12) {
-  tab2$sig[[i]] <- stars.pval(calculateFishersP(i, d.temp.h1, d.temp.h0))
-  tab2$USWestOR[[i]] <- round(calculateFishersOR(i, d.temp.h1, d.temp.h0),1)
+  tab2$USWestOR[[i]] <- round(calculateFishersOR(i, d.temp.h1, d.temp.h0), kORdigits)
+  tab2$USWestsig[[i]] <- stars.pval(calculateFishersP(i, d.temp.h1, d.temp.h0))
 }
 
-# Print
-tab2$sig <- gsub("\\s","",tab2$sig) # remove whitespace
-tab2$sig <- gsub("\\.","+",tab2$sig) # change . (p<0.10) to +
-tab2$USWest <- paste(format(tab2$USWest,digits=2,nsmall=1), tab2$sig, sep="")
-tab2$sig <- NULL
+# # Print
+tab2$USWestsig <- gsub("\\s","",tab2$USWestsig) # remove whitespace
+tab2$USWestsig <- gsub("\\.","+",tab2$USWestsig) # change . (p<0.10) to +
+# tab2$USWest <- paste(format(tab2$USWest,digits=2,nsmall=1), tab2$USWestsig, sep="")
+tab2$USWestOR <- paste(format(tab2$USWestOR,digits=2,nsmall=1), tab2$USWestsig, sep="")
+
 # -------- END Make USWest
 
 # ------ Make USEast
@@ -338,15 +340,16 @@ d.temp.h1 <- lapply(d.temp.h1[ , kJoelItems], ordered) # make the joel data bina
 d.temp.h0 <- d.prof[d.prof$WorldRest,]
 d.temp.h0 <- lapply(d.temp.h0[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
 for (i in 1:12) {
-  tab2$sig[[i]] <- stars.pval(calculateFishersP(i, d.temp.h1, d.temp.h0))
-  tab2$USEastOR[[i]] <- round(calculateFishersOR(i, d.temp.h1, d.temp.h0),1)
+  tab2$USEastOR[[i]] <- round(calculateFishersOR(i, d.temp.h1, d.temp.h0), kORdigits)
+  tab2$USEastsig[[i]] <- stars.pval(calculateFishersP(i, d.temp.h1, d.temp.h0))
 }
 
-# Print
-tab2$sig <- gsub("\\s","",tab2$sig) # remove whitespace
-tab2$sig <- gsub("\\.","+",tab2$sig) # change . (p<0.10) to +
-tab2$USEast <- paste(format(tab2$USEast,digits=2,nsmall=1), tab2$sig, sep="")
-tab2$sig <- NULL
+# # Print
+tab2$USEastsig <- gsub("\\s","",tab2$USEastsig) # remove whitespace
+tab2$USEastsig <- gsub("\\.","+",tab2$USEastsig) # change . (p<0.10) to +
+#tab2$USEast <- paste(format(tab2$USEast,digits=2,nsmall=1), tab2$USEastsig, sep="")
+tab2$USEastOR <- paste(format(tab2$USEastOR,digits=2,nsmall=1), tab2$USEastsig, sep="")
+
 # -------- END Make USEast
 
 # ------ Make London
@@ -360,15 +363,15 @@ d.temp.h1 <- lapply(d.temp.h1[ , kJoelItems], ordered) # make the joel data bina
 d.temp.h0 <- d.prof[d.prof$WorldRest,]
 d.temp.h0 <- lapply(d.temp.h0[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
 for (i in 1:12) {
-  tab2$sig[[i]] <- stars.pval(calculateFishersP(i, d.temp.h1, d.temp.h0))
-  tab2$LondonOR[[i]] <- round(calculateFishersOR(i, d.temp.h1, d.temp.h0),1)
+  tab2$LondonOR[[i]] <- round(calculateFishersOR(i, d.temp.h1, d.temp.h0), kORdigits)
+  tab2$Londonsig[[i]] <- stars.pval(calculateFishersP(i, d.temp.h1, d.temp.h0))
 }
 
-# Print
-tab2$sig <- gsub("\\s","",tab2$sig) # remove whitespace
-tab2$sig <- gsub("\\.","+",tab2$sig) # change . (p<0.10) to +
-tab2$London <- paste(format(tab2$London,digits=2,nsmall=1), tab2$sig, sep="")
-tab2$sig <- NULL
+# # Print
+tab2$Londonsig <- gsub("\\s","",tab2$Londonsig) # remove whitespace
+tab2$Londonsig <- gsub("\\.","+",tab2$Londonsig) # change . (p<0.10) to +
+#tab2$London <- paste(format(tab2$London,digits=2,nsmall=1), tab2$Londonsig, sep="")
+tab2$LondonOR <- paste(format(tab2$LondonOR,digits=2,nsmall=1), tab2$Londonsig, sep="")
 # -------- END Make London
 
 # ------ Make WorldRest
@@ -382,22 +385,36 @@ d.temp.h1 <- lapply(d.temp.h1[ , kJoelItems], ordered) # make the joel data bina
 d.temp.h0 <- d.prof[!d.prof$WorldRest,]
 d.temp.h0 <- lapply(d.temp.h0[ , kJoelItems], ordered) # make the joel data binary (must be done after sum function)
 for (i in 1:12) {
-  tab2$sig[[i]] <- stars.pval(calculateFishersP(i, d.temp.h1, d.temp.h0))
-  tab2$WorldRestOR[[i]] <- round(calculateFishersOR(i, d.temp.h1, d.temp.h0),1)
+  tab2$WorldRestOR[[i]] <- round(calculateFishersOR(i, d.temp.h1, d.temp.h0), kORdigits)
+  tab2$WorldRestsig[[i]] <- stars.pval(calculateFishersP(i, d.temp.h1, d.temp.h0))
 }
 
-# Print
-tab2$sig <- gsub("\\s","",tab2$sig) # remove whitespace
-tab2$sig <- gsub("\\.","+",tab2$sig) # change . (p<0.10) to +
-tab2$WorldRest <- paste(format(tab2$WorldRest,digits=2,nsmall=1), tab2$sig, sep="")
-tab2$sig <- NULL
+# # Print
+tab2$WorldRestsig <- gsub("\\s","",tab2$WorldRestsig) # remove whitespace
+tab2$WorldRestsig <- gsub("\\.","+",tab2$WorldRestsig) # change . (p<0.10) to +
+#tab2$WorldRest <- paste(format(tab2$WorldRest,digits=2,nsmall=1), tab2$WorldRestsig, sep="")
+tab2$WorldRestOR <- paste(format(tab2$WorldRestOR,digits=2,nsmall=1), tab2$WorldRestsig, sep="")
 # -------- END Make WorldRest
+
+
+# -------- total
+d.temp.h1 <- d.prof[] # work on a subset for the WorldRest calculation
+tab2 <- transform(tab2, nTotal = describe(d.temp.h1[kJoelItems])$n) # get the n's
+tab2 <- transform(tab2, Total = 100*describe(d.temp.h1[kJoelItems])$mean) # get means
+tab2 <- transform(tab2, Total = round(tab2$Total,1)) # round off to two decimals
+for (i in 1:12) {
+  tab2$TotalOR[[i]] <- ""
+}
+# -------- END total
 
 #tab2 <- setNames(tab2, c("", "n", "\%"))
 @
 
 <<Table2print, results="asis", echo=FALSE>>=
-print(xtable(caption="Descriptives using xtable", tab2[,-c(6:14)], digits=c(0,0,0,0,0,0), align=c("l", "l", "r","r","r","r")), caption.placement = "top")
+italic <- function(x){
+paste0('{\\emph{ ', x, '}}')
+}
+print(xtable(caption="Descriptives using xtable", tab2[,-c(6:17)], digits=c(0,0,0,0,0,0), align=c("l", "l", "r","r","r","r")), caption.placement = "top", sanitize.colnames.function = italic)
 @
 
 <<Table2decimalprint, results="asis", echo=FALSE>>=
@@ -482,13 +499,22 @@ xtable.decimal <- function(x,
 }
 
 require(xtable)
-tab2.temp <- tab2[,-c(2,5,8,11)]
+#tab2.temp <- tab2[,-c(2,6,10,14)] # remove n
+#tab2.temp <- tab2
+tab2.temp <- tab2[,-c(5,9,13,17)] # remove sig
+
 # colnames(tab2.temp) <- c("", "%", "OR", "%", "OR", "%", "OR", "%", "OR")
 tab2.temp.matrix <- as.matrix(tab2.temp)
-tab2.temp.matrix <- rbind(c("", "%", "OR", "%", "OR", "%", "OR", "%", "OR"), tab2.temp.matrix)
+# tab2.temp.matrix <- rbind(c("", "%", "OR", "", "%", "OR", "", "%", "OR", "", "%", "OR", ""), tab2.temp.matrix)
+tab2.temp.matrix <- rbind(c("", 
+#                            rep(c("n", "%", "OR", "sig"),4)),
+                            rep(c("n", "%", "OR"),4), "n", "%", ""),
+                          tab2.temp.matrix)
 # tab2.temp.matrix <- setNames(tab2.temp.matrix,c("", "p", "OR", "p", "OR", "p", "OR", "p", "OR"))
 rownames(tab2.temp.matrix) <- c('', 1:12)
-xtable.val2 <- xtable(tab2.temp.matrix)
+xtable.val2 <- xtable(tab2.temp.matrix, align =c("l", "l", 
+#                                                 rep(c("|", "r",  "r", "r", "l"), 4)))
+                                                 rep(c("r",  "r", "l"), 5)))
 
 # & \multicolumn{2}{c}{USWest}& \multicolumn{2}{c}{USEast}& \multicolumn{2}{c}{UK South}& \multicolumn{2}{c}{WorldRest}
 
@@ -496,11 +522,10 @@ addtorow <- list()
 addtorow$pos <- list(0)
 #addtorow$command <- paste0(paste0('& \\multicolumn{2}{c}{', sort(unique(sex)), '}', collapse=''), '\\\\')
 addtorow$command <- paste0("& ", # fix first column element
-                           paste0('& \\multicolumn{2}{c}{', c("USWest", "USEast", "UK South", "WorldRest"), '}', collapse=''), '\\\\')
+                           paste0('& \\multicolumn{3}{c}{', c("USWest", "USEast", "UK South", "WorldRest", "Total"), '}', collapse=''), '\\\\')
  
-print(xtable.val2, add.to.row=addtorow, include.colnames=F, hline.after = c(-1,1,nrow(xtable.val2)))
+print(xtable.val2, add.to.row=addtorow, include.colnames=F, scalebox=0.85, hline.after = c(-1,1,nrow(xtable.val2)))
 @
-
 
 \subsection*{Mathematics}
 
