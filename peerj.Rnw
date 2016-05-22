@@ -392,6 +392,8 @@ tab2$sig <- gsub("\\.","+",tab2$sig) # change . (p<0.10) to +
 tab2$WorldRest <- paste(format(tab2$WorldRest,digits=2,nsmall=1), tab2$sig, sep="")
 tab2$sig <- NULL
 # -------- END Make WorldRest
+
+#tab2 <- setNames(tab2, c("", "n", "\%"))
 @
 
 <<Table2print, results="asis", echo=FALSE>>=
@@ -479,11 +481,26 @@ xtable.decimal <- function(x,
 	print(xtab, add.to.row=addtorow, include.rownames=FALSE, include.colnames=FALSE, ...)
 }
 
+require(xtable)
 tab2.temp <- tab2[,-c(2,5,8,11)]
 # colnames(tab2.temp) <- c("", "%", "OR", "%", "OR", "%", "OR", "%", "OR")
+tab2.temp.matrix <- as.matrix(tab2.temp)
+tab2.temp.matrix <- rbind(c("", "%", "OR", "%", "OR", "%", "OR", "%", "OR"), tab2.temp.matrix)
+# tab2.temp.matrix <- setNames(tab2.temp.matrix,c("", "p", "OR", "p", "OR", "p", "OR", "p", "OR"))
+rownames(tab2.temp.matrix) <- c('', 1:12)
+xtable.val2 <- xtable(tab2.temp.matrix)
 
-xtable.decimal(tab2.temp)
+# & \multicolumn{2}{c}{USWest}& \multicolumn{2}{c}{USEast}& \multicolumn{2}{c}{UK South}& \multicolumn{2}{c}{WorldRest}
+
+addtorow <- list()
+addtorow$pos <- list(0)
+#addtorow$command <- paste0(paste0('& \\multicolumn{2}{c}{', sort(unique(sex)), '}', collapse=''), '\\\\')
+addtorow$command <- paste0("& ", # fix first column element
+                           paste0('& \\multicolumn{2}{c}{', c("USWest", "USEast", "UK South", "WorldRest"), '}', collapse=''), '\\\\')
+ 
+print(xtable.val2, add.to.row=addtorow, include.colnames=F)
 @
+
 
 \subsection*{Mathematics}
 
@@ -502,10 +519,35 @@ val <- xtable(val)
 
 addtorow <- list()
 addtorow$pos <- list(0)
-addtorow$command <- paste0(paste0('& \\multicolumn{2}{c}{', sort(unique(sex)), '}', collapse=''), '\\\\')
+#addtorow$command <- paste0(paste0('& \\multicolumn{2}{c}{', sort(unique(sex)), '}', collapse=''), '\\\\')
+addtorow$command <- paste0(paste0('& \\multicolumn{2}{c}{', c("Female", "MALE"), '}', collapse=''), '\\\\')
 
 print(val, add.to.row=addtorow, include.colnames=F)
 @
+
+
+% latex table generated in R 3.3.0 by xtable 1.8-2 package## % Fri May 20 15:36:00 2016## 
+\begin{table}[ht] 
+\centering 
+\begin{tabular}{lllllllll}   
+\hline 
+& \multicolumn{2}{c}{USWest}& \multicolumn{2}{c}{USEast}& \multicolumn{2}{c}{UK South}& \multicolumn{2}{c}{WorldRest}\\
+& \% & OR & \% & OR & \% & OR & \% & OR\\ \hline
+SourceCtrl & 97.2 & 2.1 & 94.2 & 1.0 & 96.6 & 1.7 & 94.3 & 0.7 \\   
+Build1Step & 80.9 & 1.0 & 77.9 & 0.9 & 74.7 & 0.7 & 80.6 & 1.1 \\   
+DailyBuilds & 68.4**& 1.7 & 57.1 & 1.0 & 65.5 & 1.5 & 56.3*& 0.7 \\   
+BugDB & 77.0+ & 1.4 & 73.4 & 1.2 & 78.2 & 1.5 & 70.5*& 0.8 \\   
+FixBugsB4Code & 52.8 & 1.0 & 51.9 & 1.0 & 54.0 & 1.0 & 53.1 & 1.0 \\   
+Schedule & 60.7**& 1.7 & 50.3 & 1.1 & 54.0 & 1.3 & 48.2*& 0.7 \\   
+Spec & 52.2*& 1.4 & 42.1 & 1.0 & 54.0+ & 1.6 & 43.1+ & 0.8 \\   
+QuietWork & 66.7+ & 1.4 & 60.8 & 1.1 & 58.6 & 1.0 & 59.4 & 0.9 \\   
+BestTools & 49.4**& 1.6 & 41.2 & 1.1 & 44.8 & 1.3 & 38.6*& 0.8 \\   
+Testers & 57.1*& 1.4 & 54.6 & 1.3 & 55.2 & 1.3 & 48.3*& 0.7 \\   
+CodeInterview & 65.5***& 2.6 & 52.6*& 1.5 & 62.4***& 2.3 & 42.2***& 0.5 \\   
+UsabilityTest & 37.7**& 1.7 & 30.3 & 1.2 & 22.4 & 0.8 & 26.6+ & 0.8 \\    
+\hline 
+\end{tabular} 
+\end{table}
 
 % latex table generated in R 3.3.0 by xtable 1.8-2 package
 % Fri May 20 13:52:41 2016
