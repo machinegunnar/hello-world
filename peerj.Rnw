@@ -498,7 +498,7 @@ addtorow$pos <- list(0)
 addtorow$command <- paste0("& ", # fix first column element
                            paste0('& \\multicolumn{2}{c}{', c("USWest", "USEast", "UK South", "WorldRest"), '}', collapse=''), '\\\\')
  
-print(xtable.val2, add.to.row=addtorow, include.colnames=F)
+print(xtable.val2, add.to.row=addtorow, include.colnames=F, hline.after = c(-1,1,nrow(xtable.val2)))
 @
 
 
